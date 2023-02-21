@@ -1,0 +1,52 @@
+# file: docker-compose.yml
+version: "3"
+
+services:
+  sonarqube:
+    image: sonarqube
+    # platform: linux/amd64  # uncomment this when using Mac M1
+    depends_on:
+      - db
+    restart: unless-stopped
+    environment:
+      - SONARQUBE_JDBC_USERNAME=postgres
+      - SONARQUBE_JDBC_PASSWORD=postgres
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+    ports:
+      - "9000:9000"
+      - "9092:9092"
+    networks:
+      - sonarnet
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+
+  db:
+    image: postgres:14.1-alpine
+    # platform: linux/amd64  # uncomment this when using Mac M1
+    ports:
+      - "5432:5432"
+    networks:
+      - sonarnet
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sonarqube
+    volumes:
+      - ./sonar_db:/var/lib/postgresql
+      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - postgresql_data:/var/lib/postgresql/data
+
+volumes:
+  postgresql_data:
+  sonarqube_bundled-plugins:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_db:
+  sonarqube_extensions:
+
+networks:
+  sonarnet:
